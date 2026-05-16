@@ -6,7 +6,6 @@ export class InputHandler {
     this.preventedCodes = new Set([
       'Space',
       'ArrowUp',
-      'ArrowDown',
       'ArrowLeft',
       'ArrowRight'
     ]);
@@ -44,8 +43,6 @@ export class InputHandler {
     const map = {
       KeyW: 'jump',
       ArrowUp: 'jump',
-      KeyS: 'duck',
-      ArrowDown: 'duck',
       Space: 'shoot',
       Escape: 'pause',
       KeyP: 'pause',

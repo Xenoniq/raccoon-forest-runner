@@ -27,7 +27,9 @@ export class Game {
 
     this.baseSpeed = 285;
     this.maxSpeed = 780;
-    this.groundY = 426;
+    this.groundHeight = 128;
+    this.groundTileSize = 128;
+    this.groundY = this.height - this.groundHeight;
     this.runnerX = 165;
     this.player = new Player(this.runnerX, this.groundY);
 
@@ -48,6 +50,8 @@ export class Game {
     this.shotCooldown = 0;
     this.beeHits = 0;
     this.lastHitReason = '';
+    this.nextGapWorldX = 0;
+    this.nextAppleGroupWorldX = 0;
 
     this.ui.bestScore.textContent = this.bestScore;
     this.bindUI();
@@ -173,11 +177,17 @@ export class Game {
     this.shotCooldown = 0;
     this.beeHits = 0;
     this.lastHitReason = '';
+    this.nextGapWorldX = random(1200, 1800);
+    this.nextAppleGroupWorldX = 620;
     this.player.reset(this.runnerX, this.groundY);
     this.renderer.resetDecor();
 
-    this.platforms.push(new Platform(-260, this.groundY, this.width + 860, 104, 'ground'));
-    this.nextPlatformX = this.width + 420;
+    const startPlatform = new Platform(-260, this.groundY, this.width + 1160, this.groundHeight, 'ground');
+    this.platforms.push(startPlatform);
+    this.nextPlatformX = startPlatform.x + startPlatform.width;
+    this.spawnAppleGroup(620, this.groundY - 118, 3);
+    this.nextAppleGroupWorldX = 620 + random(900, 1400);
+
     while (this.nextPlatformX < this.width + 1400) {
       this.generatePlatformSegment(true);
     }
@@ -204,13 +214,13 @@ export class Game {
 
     if (this.player.jumpedThisFrame) {
       this.audio.jump();
-      this.spawnDust(this.player.x + this.player.width * 0.45, this.player.y + this.player.height, 9);
+      this.spawnDust(this.player.x + 10, this.player.y + this.player.height - 4, 9);
     }
 
     this.updateWorldObjects(dt);
     const landedPlatform = resolvePlatformCollisions(this.player, this.platforms);
     if (landedPlatform && this.player.landedThisFrame) {
-      this.spawnDust(this.player.x + this.player.width * 0.45, landedPlatform.y - 2, 6);
+      this.spawnDust(this.player.x + 10, landedPlatform.y - 5, 6);
     }
 
     this.handleProjectileCollisions();
@@ -243,71 +253,81 @@ export class Game {
 
   generatePlatformSegment(isInitial = false) {
     const difficulty = Math.min(1, this.distance / 22000);
-    const gap = isInitial ? random(60, 105) : random(78 + difficulty * 38, 145 + difficulty * 48);
-    const width = random(430 - difficulty * 70, 720 - difficulty * 95);
-    const y = this.groundY + random(-10, 12);
-    const platform = new Platform(this.nextPlatformX + gap, y, width, 104, 'ground');
+    const tile = this.groundTileSize;
+    const segmentTiles = Math.floor(random(7, 12 - difficulty * 2));
+    const width = Math.max(tile * 6, segmentTiles * tile);
+    const worldX = this.distance + this.nextPlatformX;
+    let gap = 0;
+
+    if (!isInitial && worldX >= this.nextGapWorldX) {
+      gap = tile;
+      this.nextGapWorldX = worldX + random(1000, 1700);
+    }
+
+    const platform = new Platform(
+      this.nextPlatformX + gap,
+      this.groundY,
+      width,
+      this.groundHeight,
+      'ground'
+    );
     this.platforms.push(platform);
 
     if (!isInitial) {
       this.spawnEventsOnPlatform(platform, difficulty);
-    } else if (Math.random() < 0.75) {
-      this.spawnAppleLine(platform.x + random(90, 180), platform.y - 118, 3, 42);
-    }
-
-    if (!isInitial && Math.random() < 0.24 + difficulty * 0.08 && platform.width > 470) {
-      const floatingWidth = random(190, 320);
-      const floatingX = platform.x + random(120, Math.max(145, platform.width - floatingWidth - 60));
-      const floatingY = platform.y - random(112, 142);
-      const floating = new Platform(floatingX, floatingY, floatingWidth, 54, 'floating');
-      this.platforms.push(floating);
-      this.spawnAppleLine(floating.x + 34, floating.y - 48, Math.floor(random(3, 6)), 42);
     }
 
     this.nextPlatformX = platform.x + platform.width;
   }
 
   spawnEventsOnPlatform(platform, difficulty) {
-    const safeWidth = Math.max(1, platform.width - 210);
-    const firstX = platform.x + 110 + random(0, safeWidth * 0.35);
+    const safeWidth = Math.max(1, platform.width - 240);
+    const firstX = platform.x + 120 + random(0, safeWidth * 0.42);
     const pattern = Math.random();
 
-    if (pattern < 0.44) {
+    if (pattern < 0.48) {
       this.obstacles.push(new Obstacle('stump', firstX, platform.y));
-      this.spawnAppleArc(firstX + 92, platform.y - 138, 4, 34);
-    } else if (pattern < 0.76) {
-      const beeY = platform.y - random(150, 215);
-      this.obstacles.push(new Obstacle('bee', firstX + 24, platform.y, { y: beeY }));
-      this.spawnAppleLine(firstX + 112, beeY - 44, 3, 42);
-    } else {
-      this.spawnAppleArc(firstX, platform.y - 126, Math.floor(random(4, 7)), 38);
-      if (Math.random() < 0.46 + difficulty * 0.22) {
-        this.obstacles.push(new Obstacle('stump', firstX + random(145, 240), platform.y));
-      }
+    } else if (pattern < 0.82) {
+      const beeY = platform.y - random(150, 214);
+      this.obstacles.push(new Obstacle('bee', firstX + 18, platform.y, { y: beeY }));
     }
 
-    if (Math.random() < 0.22 + difficulty * 0.25 && platform.width > 560) {
-      const secondX = platform.x + platform.width - random(120, 190);
-      const type = Math.random() < 0.55 ? 'bee' : 'stump';
+    if (Math.random() < 0.18 + difficulty * 0.18 && platform.width > 760) {
+      const secondX = platform.x + platform.width - random(170, 260);
+      const type = Math.random() < 0.54 ? 'bee' : 'stump';
       if (type === 'bee') {
-        this.obstacles.push(new Obstacle('bee', secondX, platform.y, { y: platform.y - random(145, 210) }));
+        this.obstacles.push(new Obstacle('bee', secondX, platform.y, { y: platform.y - random(150, 214) }));
       } else {
         this.obstacles.push(new Obstacle('stump', secondX, platform.y));
       }
     }
+
+    const appleAnchor = platform.x + random(130, Math.max(160, platform.width - 270));
+    this.trySpawnAppleGroup(platform, appleAnchor);
   }
 
-  spawnAppleLine(startX, y, count, spacing) {
-    for (let i = 0; i < count; i += 1) {
-      this.collectibles.push(new Collectible(startX + i * spacing, y + Math.sin(i * 0.8) * 12));
-    }
+  trySpawnAppleGroup(platform, preferredX = null) {
+    const minX = platform.x + 120;
+    const maxX = platform.x + platform.width - 250;
+    if (maxX <= minX) return false;
+
+    const groupX = clamp(preferredX ?? random(minX, maxX), minX, maxX);
+    const groupWorldX = this.distance + groupX;
+    if (groupWorldX < this.nextAppleGroupWorldX) return false;
+
+    const count = Math.floor(random(3, 6));
+    const y = platform.y - random(106, 136);
+    this.spawnAppleGroup(groupX, y, count);
+    this.nextAppleGroupWorldX = groupWorldX + random(850, 1400);
+    return true;
   }
 
-  spawnAppleArc(startX, baseY, count, spacing) {
+  spawnAppleGroup(startX, baseY, count) {
+    const spacing = 42;
     const middle = (count - 1) / 2;
     for (let i = 0; i < count; i += 1) {
-      const lift = Math.abs(i - middle) * 14;
-      this.collectibles.push(new Collectible(startX + i * spacing, baseY + lift));
+      const arc = Math.abs(i - middle) * 10;
+      this.collectibles.push(new Collectible(startX + i * spacing, baseY + arc));
     }
   }
 
@@ -372,7 +392,7 @@ export class Game {
     this.lastHitReason = 'яма';
     this.takeDamage('fall');
     if (this.state === 'running') {
-      this.platforms.unshift(new Platform(-260, this.groundY, this.width + 760, 104, 'ground'));
+      this.platforms.unshift(new Platform(-260, this.groundY, this.width + 760, this.groundHeight, 'ground'));
       this.player.reset(this.runnerX, this.groundY);
       this.player.invincibleTimer = 1.35;
     }
@@ -424,7 +444,8 @@ export class Game {
         radius: random(2, 5),
         color: 'rgba(184, 132, 72, 0.46)',
         life: random(0.22, 0.55),
-        gravity: 430
+        gravity: 430,
+        layer: 'dust'
       }));
     }
   }
@@ -452,11 +473,12 @@ export class Game {
     this.renderer.drawBackground(this.assets, this.distance, this.speed, this.groundY);
 
     this.platforms.forEach((platform) => platform.draw(this.ctx, this.assets, this.distance));
+    this.particles.filter((particle) => particle.layer === 'dust').forEach((particle) => particle.draw(this.ctx));
     this.collectibles.forEach((collectible) => collectible.draw(this.ctx, this.assets));
     this.obstacles.forEach((obstacle) => obstacle.draw(this.ctx, this.assets));
     this.projectiles.forEach((projectile) => projectile.draw(this.ctx, this.assets));
     this.player.draw(this.ctx, this.assets);
-    this.particles.forEach((particle) => particle.draw(this.ctx));
+    this.particles.filter((particle) => particle.layer !== 'dust').forEach((particle) => particle.draw(this.ctx));
     this.renderer.drawHUD(this);
   }
 
@@ -482,7 +504,7 @@ export class Game {
     this.ui.overlay.classList.remove('hidden');
     this.ui.overlayBadge.textContent = 'Яблочная охота';
     this.ui.overlayTitle.textContent = 'Помоги Еноту собрать как можно больше яблок!';
-    this.ui.overlayText.textContent = 'Енот бежит сам. Слегка смещайся по тропе, перепрыгивай пни и ямы, пригибайся от опасностей, бросай камни в пчёл и собирай яблоки. Чем дальше забег — тем выше скорость.';
+    this.ui.overlayText.textContent = 'Енот бежит сам. Слегка смещайся по тропе, перепрыгивай пни и ямы, бросай камни в пчёл и собирай яблоки. Чем дальше забег — тем выше скорость.';
     this.ui.overlayImage.src = 'assets/raccoon/raccoon_winner.png';
     this.ui.startButton.textContent = 'Начать забег';
     this.ui.startButton.disabled = false;
@@ -527,6 +549,10 @@ export class Game {
     this.ui.overlay.classList.add('hidden');
     this.ui.startButton.disabled = false;
   }
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function random(min, max) {

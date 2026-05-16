@@ -65,7 +65,6 @@ export class Renderer {
     this.drawClouds(ctx, distance);
     this.drawHillLayer(ctx, distance * 0.075, 305, '#74bf6f', 0.65);
     this.drawHillLayer(ctx, distance * 0.13, 356, '#4f9d57', 0.82);
-    this.drawTreeSilhouettes(ctx, distance * 0.22, 366);
     this.updateDecor(distance);
     this.drawDecor(ctx, assets, distance, groundY);
     this.drawAtmosphere(ctx, speed);
@@ -125,26 +124,6 @@ export class Renderer {
     ctx.restore();
   }
 
-  drawTreeSilhouettes(ctx, offset, baseY) {
-    ctx.save();
-    ctx.globalAlpha = 0.46;
-    const spacing = 92;
-    for (let x = -spacing; x < this.width + spacing; x += spacing) {
-      const px = x - (offset % spacing);
-      const height = 86 + Math.sin(x * 0.06) * 20;
-      ctx.fillStyle = '#3e7344';
-      ctx.beginPath();
-      ctx.moveTo(px + 42, baseY - height);
-      ctx.lineTo(px + 8, baseY + 50);
-      ctx.lineTo(px + 76, baseY + 50);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = '#34663d';
-      ctx.fillRect(px + 36, baseY + 30, 12, 90);
-    }
-    ctx.restore();
-  }
-
   drawDecor(ctx, assets, distance, groundY) {
     const scroll = distance * 0.42;
     const tree = assets.get('tree');
@@ -153,15 +132,18 @@ export class Renderer {
     ctx.save();
     this.decor.forEach((item) => {
       const x = item.x - scroll;
+      if (x < -260 || x > this.width + 260) return;
+
       if (item.type === 'tree' && tree) {
-        const size = 215 * item.scale;
-        const y = groundY - size + 38;
-        this.drawImageWithOptionalFlip(ctx, tree, x, y, size, size, item.flip, item.tint, 0.92);
+        const size = 178 * item.scale;
+        const y = groundY - size;
+        this.drawImageWithOptionalFlip(ctx, tree, x, y, size, size, item.flip, item.tint, 0.96);
       }
+
       if (item.type === 'bush' && bush) {
-        const size = 116 * item.scale;
-        const y = groundY - size * 0.72 + 8;
-        this.drawImageWithOptionalFlip(ctx, bush, x, y, size, size, item.flip, item.tint, 0.96);
+        const size = 126 * item.scale;
+        const y = groundY - size;
+        this.drawImageWithOptionalFlip(ctx, bush, x, y, size, size, item.flip, item.tint, 0.98);
       }
     });
     ctx.restore();
@@ -207,23 +189,13 @@ export class Renderer {
 
   drawHUD(game) {
     const ctx = this.ctx;
-    const meterWidth = 250;
-    const progress = Math.min(1, (game.speed - game.baseSpeed) / (game.maxSpeed - game.baseSpeed));
 
     ctx.save();
-    ctx.fillStyle = 'rgba(17, 45, 31, 0.34)';
-    ctx.roundRect(22, 22, meterWidth, 16, 999);
-    ctx.fill();
-    const meter = ctx.createLinearGradient(22, 0, 22 + meterWidth, 0);
-    meter.addColorStop(0, '#90df66');
-    meter.addColorStop(0.65, '#ffd166');
-    meter.addColorStop(1, '#ff6b57');
-    ctx.fillStyle = meter;
-    ctx.roundRect(22, 22, meterWidth * progress, 16, 999);
-    ctx.fill();
-    ctx.font = '800 13px Rubik, sans-serif';
-    ctx.fillStyle = 'rgba(17, 45, 31, 0.82)';
-    ctx.fillText(`Скорость тропы: ${Math.round(game.speed)} px/s`, 24, 55);
+    ctx.font = '800 15px Rubik, sans-serif';
+    ctx.fillStyle = 'rgba(17, 45, 31, 0.84)';
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.55)';
+    ctx.shadowBlur = 8;
+    ctx.fillText(`Скорость тропы: ${Math.round(game.speed)} px/s`, 24, 36);
     ctx.restore();
   }
 

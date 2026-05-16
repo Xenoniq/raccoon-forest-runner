@@ -16,12 +16,14 @@ export class Obstacle {
       this.height = 58;
       this.y = options.y ?? groundY - 148;
       this.baseY = this.y;
+      this.approachSpeed = random(36, 64);
       this.scoreValue = 150;
     }
   }
 
   update(dt, speed) {
-    this.x -= speed * dt;
+    const activeSpeed = this.type === 'bee' ? speed + this.approachSpeed : speed;
+    this.x -= activeSpeed * dt;
     this.time += dt;
 
     if (this.type === 'bee') {
@@ -66,4 +68,8 @@ export class Obstacle {
     }
     ctx.restore();
   }
+}
+
+function random(min, max) {
+  return Math.random() * (max - min) + min;
 }

@@ -4,7 +4,6 @@ export class Player {
     this.groundY = groundY;
     this.standWidth = 78;
     this.standHeight = 104;
-    this.duckHeight = 58;
     this.width = this.standWidth;
     this.height = this.standHeight;
     this.x = x;
@@ -20,7 +19,6 @@ export class Player {
     this.coyoteTimer = 0;
     this.jumpBuffer = 0;
     this.jumpBufferDuration = 0.12;
-    this.ducking = false;
     this.previousBottom = this.y + this.height;
     this.landedThisFrame = false;
     this.jumpedThisFrame = false;
@@ -42,7 +40,6 @@ export class Player {
     this.grounded = false;
     this.coyoteTimer = 0;
     this.jumpBuffer = 0;
-    this.ducking = false;
     this.previousBottom = this.y + this.height;
     this.landedThisFrame = false;
     this.jumpedThisFrame = false;
@@ -68,10 +65,7 @@ export class Player {
       this.jumpBuffer = Math.max(0, this.jumpBuffer - dt);
     }
 
-    const wantsDuck = input.isDown('duck') && this.grounded && !input.isDown('jump');
-    this.applyDucking(wantsDuck);
-
-    if (this.jumpBuffer > 0 && (this.grounded || this.coyoteTimer > 0) && !this.ducking) {
+    if (this.jumpBuffer > 0 && (this.grounded || this.coyoteTimer > 0)) {
       this.velocityY = this.jumpForce;
       this.jumpedThisFrame = true;
       this.grounded = false;
@@ -103,26 +97,7 @@ export class Player {
     this.x = clamp(this.x, bounds.left, bounds.right - this.width);
   }
 
-  applyDucking(shouldDuck) {
-    if (this.ducking === shouldDuck) return;
-
-    const bottom = this.y + this.height;
-    this.ducking = shouldDuck;
-    this.height = shouldDuck ? this.duckHeight : this.standHeight;
-    this.width = shouldDuck ? 90 : this.standWidth;
-    this.y = bottom - this.height;
-  }
-
   getHitbox() {
-    if (this.ducking) {
-      return {
-        x: this.x + 18,
-        y: this.y + 12,
-        width: this.width - 34,
-        height: this.height - 14
-      };
-    }
-
     return {
       x: this.x + 18,
       y: this.y + 18,
@@ -139,19 +114,13 @@ export class Player {
     if (blink && !this.dead) return;
 
     const bottom = this.y + this.height;
-    const runBob = this.grounded && !this.ducking ? Math.sin(this.runTime * 15.5) * 2.2 : 0;
-    const drawW = this.ducking ? 96 : 86;
-    const drawH = this.ducking ? 72 : 116;
+    const runBob = this.grounded ? Math.sin(this.runTime * 15.5) * 2.2 : 0;
+    const drawW = 86;
+    const drawH = 116;
     const drawX = this.x - 4;
     const drawY = bottom - drawH + runBob;
 
     ctx.save();
-    if (this.ducking && !this.dead) {
-      ctx.translate(drawX + drawW / 2, drawY + drawH / 2);
-      ctx.scale(1.08, 0.76);
-      ctx.translate(-(drawX + drawW / 2), -(drawY + drawH / 2));
-    }
-
     ctx.drawImage(image, drawX, drawY, drawW, drawH);
     ctx.restore();
   }

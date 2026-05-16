@@ -1,5 +1,5 @@
 export class Platform {
-  constructor(x, y, width, height = 44, type = 'ground') {
+  constructor(x, y, width, height = 128, type = 'ground') {
     this.x = x;
     this.y = y;
     this.width = width;
@@ -20,27 +20,26 @@ export class Platform {
     };
   }
 
-  draw(ctx, assets, distance = 0) {
+  draw(ctx, assets) {
     const grass = assets.get('grass');
     if (!grass) return;
 
-    const tile = 96;
-    const startX = Math.floor(this.x / tile) * tile;
-    const endX = this.x + this.width + tile;
+    const tile = 128;
+    const drawX = Math.round(this.x);
+    const drawY = Math.round(this.y);
+    const drawW = Math.ceil(this.width) + 1;
+    const drawH = this.type === 'ground'
+      ? Math.max(this.height, ctx.canvas.height - drawY)
+      : this.height;
+    const endX = drawX + drawW;
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(this.x, this.y - 10, this.width, this.height + 30);
+    ctx.rect(drawX, drawY, drawW, drawH);
     ctx.clip();
 
-    for (let x = startX; x < endX; x += tile) {
-      ctx.drawImage(grass, x, this.y - 10, tile, tile);
-    }
-
-    if (this.type === 'floating') {
-      ctx.globalAlpha = 0.22;
-      ctx.fillStyle = '#402815';
-      ctx.fillRect(this.x + 10, this.y + this.height - 4, this.width - 20, 9);
+    for (let x = drawX; x < endX; x += tile) {
+      ctx.drawImage(grass, x, drawY, tile, tile);
     }
 
     ctx.restore();

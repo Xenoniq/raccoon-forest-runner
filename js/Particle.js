@@ -9,6 +9,7 @@ export class Particle {
     this.life = options.life ?? random(0.35, 0.75);
     this.maxLife = this.life;
     this.gravity = options.gravity ?? 360;
+    this.layer = options.layer ?? 'burst';
     this.markedForRemoval = false;
   }
 
