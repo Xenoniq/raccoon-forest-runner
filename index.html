@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Raccoon Apple Run — бесконечный платформер</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main class="page-shell">
+    <section class="game-card" aria-label="Игра Raccoon Apple Run">
+      <header class="top-panel">
+        <div>
+          <p class="eyebrow">Canvas Auto Platformer</p>
+          <h1>Raccoon Apple Run</h1>
+        </div>
+        <div class="stats" aria-label="Игровая статистика">
+          <div class="stat-pill"><span>Счёт</span><strong id="score">0</strong></div>
+          <div class="stat-pill"><span>Яблоки</span><strong id="apples">0</strong></div>
+          <div class="stat-pill"><span>Рекорд</span><strong id="bestScore">0</strong></div>
+          <div class="stat-pill hearts" id="hearts" aria-label="Здоровье">❤❤❤</div>
+        </div>
+      </header>
+
+      <div class="canvas-wrap">
+        <canvas id="gameCanvas" width="960" height="540" aria-label="Игровое поле"></canvas>
+        <div class="overlay" id="menuOverlay">
+          <div class="overlay-card">
+            <img id="overlayImage" class="overlay-raccoon" src="assets/raccoon/raccoon_winner.png" alt="Енот с яблоками">
+            <p class="badge">Яблочная охота</p>
+            <h2>Помоги Еноту собрать как можно больше яблок!</h2>
+            <p id="overlayText">
+              Енот бежит сам. Слегка смещайся по тропе, перепрыгивай пни и ямы, пригибайся от опасностей,
+              бросай камни в пчёл и собирай яблоки. Чем дальше забег — тем выше скорость.
+            </p>
+            <div class="controls-grid">
+              <span>A/D / ←/→</span><span>небольшое смещение по тропе</span>
+              <span>W / ↑</span><span>прыжок через пни и ямы</span>
+              <span>S / ↓</span><span>пригнуться</span>
+              <span>Space</span><span>бросить камень в пчелу</span>
+              <span>Esc / P</span><span>пауза / продолжить</span>
+              <span>R</span><span>быстрый рестарт</span>
+            </div>
+            <div class="overlay-actions">
+              <button id="startButton" class="primary-button">Начать забег</button>
+              <button id="overlayRestartButton" class="secondary-button hidden-control">Рестарт</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="bottom-panel" aria-label="Управление игрой">
+        <button id="pauseButton" class="ghost-button">Пауза</button>
+        <button id="restartButton" class="ghost-button">Рестарт</button>
+      </footer>
+    </section>
+
+    <footer class="project-footer">© Алексеева Н.Д 2026  · Нейросеть: ChatGPT · Время выполнения: 20 минут</footer>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
